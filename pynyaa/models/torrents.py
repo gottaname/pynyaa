@@ -92,11 +92,19 @@ class Comment(db.Model):
     date = db.Column(db.DateTime(True))
     av = db.Column(db.String(255))
 
+    old_user_name = db.Column(db.String(100))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='comments')
 
     torrent_id = db.Column(db.Integer, db.ForeignKey('torrent.id'))
     torrent = db.relationship('Torrent', backref='comments')
+
+    __table_args__ = (
+        db.CheckConstraint(
+            'old_user_name IS NULL AND user_id IS NOT NULL OR '
+            'old_user_name IS NOT NULL AND user_id IS NULL',
+            'chk_user_old_name'),
+    )
 
 
 class File(db.Model):

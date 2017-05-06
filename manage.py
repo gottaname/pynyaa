@@ -6,6 +6,7 @@ from datetime import datetime
 import time
 import zlib
 import json
+import html
 
 import pytz
 import click
@@ -134,7 +135,9 @@ def import_sqlite(path, destination='import'):
                 try:
                     rowdict['description'] = zlib.decompress(rowdict['description']).decode('utf-8')
                 except Exception as exc:
-                    rowdict['description'] = ''
+                    rowdict['description'] = None
+            else:
+                rowdict['description'] = None
 
             rowdict['is_sqlite_import'] = True
 
@@ -146,26 +149,36 @@ def import_sqlite(path, destination='import'):
                     comments = []
 
                 for json_comment in comments:
+                    json_comment['un'] = html.unescape(json_comment['un'])
                     if json_comment['ui'] not in users:
+                        users.add(json_comment['ui'])
                         if json_comment['us'] not in user_status:
                             user_status[json_comment['us']] = models.UserStatus(
                                 name=json_comment['us']
                             )
                             db.session.add(user_status[json_comment['us']])
-                        user = models.User(
-                            id=json_comment['ui'],
-                            name=json_comment['un'],
-                            status=user_status[json_comment['us']]
-                        )
-                        db.session.add(user)
-                        users.add(json_comment['ui'])
+
+                        if json_comment['us'] != 'User':
+                            user = models.User(
+                                id=json_comment['ui'],
+                                name=json_comment['un'],
+                                status=user_status[json_comment['us']]
+                            )
+                            db.session.add(user)
+
                     comment = models.Comment(
                         id=int(json_comment['id'].lstrip('c')),
                         text=extract_comment(json_comment['c']),
                         av=json_comment['av'],
                         date=datetime.fromtimestamp(json_comment['t'], pytz.utc),
-                        user_id=json_comment['ui'],
                     )
+                    if json_comment['us'] == 'User':
+                        comment.old_user_name = json_comment['un']
+                        comment.user_id = None
+                    else:
+                        comment.old_user_name = None
+                        comment.user_id = json_comment['ui']
+
                     comment_list.append(comment)
             rowdict['comments'] = comment_list
             db.session.add(models.Torrent(**rowdict))

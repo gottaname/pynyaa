@@ -115,7 +115,11 @@
         {% for comment in torrent.comments %}
             <div class="comment" id="c{{ comment.id }}">
                 <div class="author">
-                    <strong>{{ comment.user.name }}</strong>
+                    {% if comment.user %}
+                        <strong>{{ comment.user.name }}</strong>
+                    {% else %}
+                        <em>{{ comment.old_user_name }}</em>
+                    {% endif %}
                 </div>
                 <div class="datetime">
                     <em>
