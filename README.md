@@ -3,6 +3,8 @@
 
 Based on [nyaapantsu](https://github.com/ewhal/nyaa).
 
+[#pynyaa @ irc.rizon.net](irc://irc.rizon.net/pynyaa)
+
 ## Requirements
 
 - Python3.6 (cause f-strings)
