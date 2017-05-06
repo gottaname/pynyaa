@@ -38,6 +38,12 @@
                 <li><a href="{{ url_for('main.faq') }}">FAQ</a></li>
                 <li><a href="irc://irc.rizon.net/tonari.">IRC</a></li>
                 <li><a href="{{ url_for('main.feed', **search) }}">Feed</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('user.logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('user.login') }}">Login</a></li>
+                    <li><a href="{{ url_for('user.sign_up') }}">Sign up</a></li>
+                {% endif %}
             </ul>
             <form class="navbar-form navbar-right" role="search" action="{{ url_for('main.search') }}" method="get">
                 <div class="form-group">
@@ -53,6 +59,21 @@
 <div style="padding-top: 10rem"></div>
 
 <div class="container {% block container_class %}{% endblock %}" id="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="row">
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="flash-message">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category|bootstrap_alert }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="advanced-search">
         <div class="heading">Advanced Search</div>
         <form class="navbar-form" role="search" action="{{ url_for('main.search') }}" method="get">

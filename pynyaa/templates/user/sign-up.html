@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+
+    <form action="{{ url_for('user.sign_up') }}" method="post">
+        <div class="hidden">
+            {{ form.csrf_token() }}
+        </div>
+        <div class="form-group">
+            <label for="username">Username</label>
+            {{ form.username(class='form-control') }}
+        </div>
+        <div class="form-group">
+            <label for="email">E-mail address</label>
+            {{ form.email(class='form-control') }}
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            {{ form.password(class='form-control') }}
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+
+{% endblock %}

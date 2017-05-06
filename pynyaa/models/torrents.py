@@ -73,19 +73,6 @@ class Status(db.Model):
         return self.name
 
 
-class UserStatus(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), unique=True)
-
-    status_id = db.Column(db.Integer, db.ForeignKey('user_status.id'))
-    status = db.relationship('UserStatus', backref='users')
-
-
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text)

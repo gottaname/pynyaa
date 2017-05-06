@@ -27,6 +27,13 @@ def cdatasafe(text):
     return Markup(text)
 
 
+def bootstrap_alert(flash_category):
+    return {
+        'error': 'danger',
+        'message': 'success',
+    }.get(flash_category, flash_category)
+
+
 def inject_search_data():
     """before_request hook"""
     map_long_names = dict(

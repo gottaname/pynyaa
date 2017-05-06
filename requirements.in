@@ -1,5 +1,7 @@
 Flask
 Flask-SQLAlchemy
 Flask-Wtf
+Flask-Login
+Flask-Scrypt
 psycopg2
 pytz
