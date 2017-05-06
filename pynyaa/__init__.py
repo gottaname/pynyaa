@@ -35,6 +35,7 @@ def init_jinja_env(app: Flask):
     app.jinja_env.filters['pretty_size'] = utils.pretty_size
     app.jinja_env.filters['cdatasafe'] = utils.cdatasafe
     app.jinja_env.globals['url_for_other_page'] = utils.url_for_other_page
+    app.jinja_env.finalize = lambda val: '' if val is None else val
 
 
 def init_hooks(app: Flask):
