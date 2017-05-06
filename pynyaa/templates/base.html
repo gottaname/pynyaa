@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>PyNyaa - {% block title %}Error 404{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}"/>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png', v=3) }}"/>
     <link href="{{ url_for('main.feed', **search) }}" type="application/atom+xml"
           rel="alternate" title="PyNyaa Feed" />
     <!-- Latest compiled and minified CSS -->
