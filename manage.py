@@ -64,6 +64,7 @@ def import_sqlite(path, destination='import'):
         status_id_max, = cursor.execute('SELECT MAX(status_id) FROM statuses').fetchone()
         subcat_id_max, = cursor.execute('SELECT MAX(sub_category_id) FROM sub_categories').fetchone()
         torrent_id_max, = cursor.execute('SELECT MAX(torrent_id) FROM torrents').fetchone()
+        user_id_max = 500000  # can't look this up so just set it high enough
 
         # On import, those tables will all have an explicit id specified.
         # For new records we reset the sequence counter.
@@ -72,6 +73,7 @@ def import_sqlite(path, destination='import'):
         db.engine.execute(f'ALTER SEQUENCE status_id_seq RESTART WITH {status_id_max+1}')
         db.engine.execute(f'ALTER SEQUENCE sub_category_id_seq RESTART WITH {subcat_id_max+1}')
         db.engine.execute(f'ALTER SEQUENCE torrent_id_seq RESTART WITH {torrent_id_max+1}')
+        db.engine.execute(f'ALTER SEQUENCE user_id_seq RESTART WITH {user_id_max+1}')
 
         for row in cursor.execute('SELECT category_id, category_name FROM categories'):
             db.session.add(models.Category(**dict(zip(('id', 'name'), row))))
