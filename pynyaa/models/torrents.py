@@ -1,5 +1,8 @@
 
+import os
 from urllib.parse import urlencode
+
+from flask import current_app
 
 from .. import db
 
@@ -10,6 +13,10 @@ class Torrent(db.Model):
     hash = db.Column(db.String(40), index=True, nullable=False)
 
     is_sqlite_import = db.Column(db.Boolean, default=False)
+    upload_hash = db.Column(db.String(21))
+
+    uploader_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    uploader = db.relationship('User', backref='uploads')
 
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     category = db.relationship('Category', backref='torrents')
@@ -39,6 +46,14 @@ class Torrent(db.Model):
     @property
     def cat_url_param(self):
         return f'{self.category_id}_{self.sub_category_id}'
+
+    @property
+    def file_exists(self):
+        path = os.path.join(current_app.static_folder, '..', 'uploads',
+                            'torrents', f'{self.hash}.torrent')
+        if os.path.exists(path):
+            return True
+        return False
 
     @property
     def magnet(self):

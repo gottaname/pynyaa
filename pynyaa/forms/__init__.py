@@ -9,6 +9,9 @@ from wtforms.validators import DataRequired, Email
 class UploadTorrentForm(FlaskForm):
     torrent = FileField(validators=[DataRequired()])
     category = SelectField(validators=[DataRequired()])
+
+
+class UploadDetailForm(FlaskForm):
     website = StringField()
     description = TextAreaField()
 

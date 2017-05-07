@@ -8,3 +8,4 @@ config/*
 !config/sample_config.py
 import/
 nyaapantsu-go/
+pynyaa/assets/uploads/

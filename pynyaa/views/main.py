@@ -1,11 +1,13 @@
 
-import hashlib
 from datetime import datetime
+import os
 
 from flask import (
     Blueprint, render_template, abort, request, Response, g, redirect, url_for,
-    jsonify
+    current_app, flash
 )
+from flask.helpers import send_from_directory
+from flask_login import current_user
 import pytz
 
 from .. import models, db, forms
@@ -102,10 +104,14 @@ def upload():
 
     Possibly requires some more sanity checks.
     """
+    if not current_user.is_authenticated:
+        flash('You need to login to upload files.')
+        return redirect(url_for('user.login'))
+
     upload_form = forms.UploadTorrentForm()
 
-    categories = models.Category.query\
-        .options(db.joinedload(models.Category.sub_categories))\
+    categories = models.Category.query \
+        .options(db.joinedload(models.Category.sub_categories)) \
         .order_by(models.Category.name).all()
 
     cats = {}
@@ -114,80 +120,86 @@ def upload():
             cats[f'{cat.id}_{subcat.id}'] = f'{cat.name} - {subcat.name}'
     upload_form.category.choices = cats.items()
 
-    if upload_form.validate_on_submit():
-        torrent_file = upload_form.data['torrent']
-        category = upload_form.data.get('category')
-        if category not in cats:
-            return abort(400, 'Invalid category')
+    if not upload_form.validate_on_submit():
+        return render_template('upload/upload.html', categories=categories, form=upload_form)
 
-        try:
-            torrent_data = utils.decode_torrent(torrent_file.stream.read())
-        except utils.bencode.BTFailure:
-            return abort(400, 'Invalid torrent file')
+    torrent_file = upload_form.data['torrent']
 
-        # announce, comment, created by, creation date, info
-        try:
-            bencoded_info = utils.bencode.bencode(torrent_data['info'])
-        except utils.bencode.BTFailure as exc:
-            return abort(400, str(exc))
-        info_hash = hashlib.sha1(bencoded_info).hexdigest()
+    torrent_info = utils.torrent.get_info(torrent_file.stream)
+    torrent_folder = os.path.join(current_app.static_folder, 'uploads', 'torrents')
+    torrent_file.save(os.path.join(torrent_folder, f'{torrent_info.hash}.torrent'))
 
-        # two types of torrents:
-        # single file:
-        #   length, name, piece length, pieces
+    torrent = models.Torrent()
+    torrent.is_sqlite_import = False
+    torrent.upload_hash = utils.random_string(21)
+    torrent.uploader = current_user
+    torrent.name = torrent_info.name
+    torrent.hash = torrent_info.hash
+    torrent.filesize = torrent_info.length
 
-        # multiple files:
-        #   files, name, piece length, pieces
+    cat, subcat = upload_form.category.data.split('_', 1)
+    torrent.category_id = cat
+    torrent.sub_category_id = subcat
 
-        # info keys: length, name, piece length, pieces
-        info = torrent_data['info']
+    torrent.downloads = 0
+    torrent.stardom = 0
+    torrent.date = datetime.now(pytz.utc)
 
-        torrent = models.Torrent()
-        torrent.is_sqlite_import = False
-        torrent.name = info['name']
-        torrent.hash = info_hash
+    torrent.t_announce = torrent_info.trackers
+    torrent.t_comment = torrent_info.comment
+    torrent.t_created_by = torrent_info.created_by
+    torrent.t_creation_date = torrent_info.creation_date
 
-        cat, subcat = category.split('_', 1)
-        torrent.category_id = cat
-        torrent.sub_category_id = subcat
+    file_paths = []
+    file_sizes = []
+    for path, size in torrent_info.files:
+        file_paths.append(path)
+        file_sizes.append(size)
 
-        torrent.description = upload_form.data.get('description')
-        torrent.website_link = upload_form.data.get('website')
-        torrent.downloads = 0
-        torrent.stardom = 0
-        torrent.date = datetime.now(pytz.utc)
+    torrent.file_paths = file_paths
+    torrent.file_sizes = file_sizes
+    db.session.add(torrent)
+    db.session.commit()
 
-        announce = []
-        if 'announce' in torrent_data:
-            announce.append(torrent_data['announce'])
+    return redirect(url_for('main.upload_more', upload_hash=torrent.upload_hash))
 
-        if 'announce-list' in torrent_data:
-            announce.extend([item for sub in torrent_data['announce-list'] for item in sub])
 
-        announce = sorted(set(announce))
-        torrent.t_announce = announce
-        torrent.t_comment = torrent_data.get('comment')
-        torrent.t_created_by = torrent_data['created by']
-        torrent.t_creation_date = datetime.fromtimestamp(
-            torrent_data['creation date'], pytz.utc)
+@main.route('/upload/<upload_hash>', methods=['GET', 'POST'])
+def upload_more(upload_hash):
+    torrent = models.Torrent.query.filter_by(upload_hash=upload_hash).first()
+    if torrent is None:
+        return abort(404)
+    detail_form = forms.UploadDetailForm()
 
-        file_paths = []
-        file_sizes = []
-        if 'files' in info:
-            torrent.filesize = 0
-            for file_data in info['files']:
-                torrent.filesize += file_data['length']
-                file_paths.append('/'.join(file_data['path']))
-                file_sizes.append(file_data['length'])
-        else:
-            torrent.filesize = info['length']
-            file_paths.append(torrent.name)
-            file_sizes.append(torrent.filesize)
+    if detail_form.validate_on_submit():
+        torrent.upload_hash = None
 
-        torrent.file_paths = file_paths
-        torrent.file_sizes = file_sizes
-        db.session.add(torrent)
+        torrent.description = detail_form.data.get('description')
+        torrent.website_link = detail_form.data.get('website')
         db.session.commit()
-        return redirect(url_for('.torrent_view', torrent_id=torrent.id))
+        return redirect(url_for('main.torrent_view', torrent_id=torrent.id))
 
-    return render_template('upload.html', categories=categories, form=upload_form)
+    return render_template('upload/details.html', torrent=torrent, form=detail_form)
+
+
+@main.route('/download/<int:torrent_id>')
+def download_torrent(torrent_id):
+    torrent = models.Torrent.query.filter_by(id=torrent_id).first()
+    if torrent is None:
+        return abort(404)
+
+    torrents_folder = os.path.abspath(os.path.join(
+        current_app.static_folder, '..', 'uploads', 'torrents'
+    ))
+
+    filename = f'{torrent.hash}.torrent'
+    absolute_filename = os.path.join(torrents_folder, filename)
+    if not os.path.exists(absolute_filename):
+        return abort(404)
+
+    return send_from_directory(
+        torrents_folder,
+        filename,
+        as_attachment=True,
+        attachment_filename=f'{torrent.name}.torrent',
+    )

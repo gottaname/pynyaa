@@ -32,11 +32,21 @@
                 <td>{{ torrent.filesize|pretty_size }}</td>
             </tr>
             <tr>
+                <th>Website</th>
+                <td>{{ torrent.website_link }}</td>
+            </tr>
+            <tr>
                 <th>Links</th>
-                <td><a aria-label="Magnet Button" href="{{ torrent.magnet }}" type="button"
+                <td><a aria-label="Magnet Button" href="{{ torrent.magnet }}"
                        class="btn btn-success download-btn">
-                    <span class="glyphicon glyphicon-magnet" aria-hidden="true"></span>
-                    Download!</a>
+                    <span class="glyphicon glyphicon-magnet" aria-hidden="true"></span></a>
+                    {% if torrent.file_exists %}
+                    <a aria-label="Download"
+                       href="{{ url_for('main.download_torrent', torrent_id=torrent.id) }}"
+                       class="btn btn-success download-btn">
+                        Download
+                    </a>
+                    {% endif %}
                 </td>
             </tr>
             <tr>

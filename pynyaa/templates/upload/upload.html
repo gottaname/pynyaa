@@ -20,10 +20,12 @@
             <div class="form-group{% if form.torrent.errors %} has-error{% endif %}">
                 <label for="torrent">Torrent file upload</label>
                 {{ form.torrent(class='form-control') }}
+                {% if form.torrent.errors %}
                 <p class="help-block">{{ form.torrent.errors|join(', ') }}</p>
+                {% endif %}
                 <p class="help-block">Upload a torrent file to pre-fill information</p>
             </div>
-            <div class="form-group">
+            <div class="form-group{% if form.category.errors %} has-error{% endif %}">
                 <label for="category">Category</label>
                 <select name="category" id="category" class="form-control">
                     {% for category in categories %}
@@ -37,14 +39,9 @@
                         </optgroup>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="form-group">
-                <label for="website">Website</label>
-                {{ form.website(class='form-control') }}
-            </div>
-            <div class="form-group">
-                <label for="description">Torrent Description</label>
-                {{ form.description(class='form-control', rows=10) }}
+                {% if form.category.errors %}
+                    <p class="help-block">{{ form.category.errors|join(', ') }}</p>
+                {% endif %}
             </div>
             <button type="submit" class="btn btn-success">Upload</button>
         </form>
