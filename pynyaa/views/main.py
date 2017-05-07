@@ -33,7 +33,8 @@ def home(page=1):
     query = query.filter(db.and_(
         models.Torrent.hash.isnot(None),
         models.Torrent.hash != '',
-        models.Torrent.filesize != 0
+        models.Torrent.filesize != 0,
+        models.Torrent.upload_hash.is_(None)
     ))
 
     search = g.search
@@ -126,7 +127,7 @@ def upload():
     torrent_file = upload_form.data['torrent']
 
     torrent_info = utils.torrent.get_info(torrent_file.stream)
-    torrent_folder = os.path.join(current_app.static_folder, 'uploads', 'torrents')
+    torrent_folder = os.path.join(current_app.static_folder, '..', 'uploads', 'torrents')
     torrent_file.save(os.path.join(torrent_folder, f'{torrent_info.hash}.torrent'))
 
     torrent = models.Torrent()
