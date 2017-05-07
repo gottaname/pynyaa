@@ -74,6 +74,7 @@
         {% endif %}
     {% endwith %}
 
+    {% block search_area %}
     <div class="advanced-search">
         <div class="heading">Advanced Search</div>
         <form class="navbar-form" role="search" action="{{ url_for('main.search') }}" method="get">
@@ -84,6 +85,7 @@
             </div>
         </form>
     </div>
+    {% endblock %}
     {% if now.strftime('%m-%d') == '04-01' %}
     <div class="text-center">
         <iframe width="560" height="315"
