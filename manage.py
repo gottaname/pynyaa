@@ -64,7 +64,6 @@ def import_sqlite(path, destination='import'):
         status_id_max, = cursor.execute('SELECT MAX(status_id) FROM statuses').fetchone()
         subcat_id_max, = cursor.execute('SELECT MAX(sub_category_id) FROM sub_categories').fetchone()
         torrent_id_max, = cursor.execute('SELECT MAX(torrent_id) FROM torrents').fetchone()
-        user_id_max = 500000  # can't look this up so just set it high enough
 
         # On import, those tables will all have an explicit id specified.
         # For new records we reset the sequence counter.
@@ -73,7 +72,6 @@ def import_sqlite(path, destination='import'):
         db.engine.execute(f'ALTER SEQUENCE status_id_seq RESTART WITH {status_id_max+1}')
         db.engine.execute(f'ALTER SEQUENCE sub_category_id_seq RESTART WITH {subcat_id_max+1}')
         db.engine.execute(f'ALTER SEQUENCE torrent_id_seq RESTART WITH {torrent_id_max+1}')
-        db.engine.execute(f'ALTER SEQUENCE user_id_seq RESTART WITH {user_id_max+1}')
 
         for row in cursor.execute('SELECT category_id, category_name FROM categories'):
             db.session.add(models.Category(**dict(zip(('id', 'name'), row))))
@@ -106,7 +104,7 @@ def import_sqlite(path, destination='import'):
 
         torrent_count, = cursor.execute('SELECT COUNT(*) FROM torrents').fetchone()
 
-        users = set()
+        users = {}
         user_status = {}
         start_time = datetime.now(pytz.utc)
 
@@ -152,8 +150,18 @@ def import_sqlite(path, destination='import'):
 
                 for json_comment in comments:
                     json_comment['un'] = html.unescape(json_comment['un'])
+
+                    comment = models.Comment(
+                        id=int(json_comment['id'].lstrip('c')),
+                        text=extract_comment(json_comment['c']),
+                        av=json_comment['av'],
+                        date=datetime.fromtimestamp(json_comment['t'], pytz.utc),
+                        old_user_name=json_comment['un'],
+                        user_id=None
+                    )
+
                     if json_comment['ui'] not in users:
-                        users.add(json_comment['ui'])
+
                         if json_comment['us'] not in user_status:
                             user_status[json_comment['us']] = models.UserStatus(
                                 name=json_comment['us']
@@ -161,25 +169,16 @@ def import_sqlite(path, destination='import'):
                             db.session.add(user_status[json_comment['us']])
 
                         if json_comment['us'] != 'User':
-                            user = models.User(
-                                id=json_comment['ui'],
-                                name=json_comment['un'],
-                                status=user_status[json_comment['us']]
-                            )
-                            db.session.add(user)
+                            user = models.User()
+                            user.name = json_comment['un']
+                            user.status = user_status[json_comment['us']]
 
-                    comment = models.Comment(
-                        id=int(json_comment['id'].lstrip('c')),
-                        text=extract_comment(json_comment['c']),
-                        av=json_comment['av'],
-                        date=datetime.fromtimestamp(json_comment['t'], pytz.utc),
-                    )
-                    if json_comment['us'] == 'User':
-                        comment.old_user_name = json_comment['un']
-                        comment.user_id = None
-                    else:
+                            db.session.add(user)
+                            users[json_comment['ui']] = user
+
+                    if json_comment['ui'] in users:
                         comment.old_user_name = None
-                        comment.user_id = json_comment['ui']
+                        comment.user = users[json_comment['ui']]
 
                     comment_list.append(comment)
             rowdict['comments'] = comment_list
@@ -197,5 +196,7 @@ def import_sqlite(path, destination='import'):
                   end='      \r')
             if torrent_number % 100 == 0:
                 db.session.commit()
+            if torrent_number % 10000 == 0:
+                print()
 
         db.session.commit()

@@ -116,7 +116,15 @@
             <div class="comment" id="c{{ comment.id }}">
                 <div class="author">
                     {% if comment.user %}
-                        <strong>{{ comment.user.name }}</strong>
+                        {% if comment.signed_up_date %}
+                            <strong>
+                                <a href="{{ url_for('user.view', user_id=comment.user.id) }}">
+                                    {{ comment.user.name }}
+                                </a>
+                            </strong>
+                        {% else %}
+                            <strong>{{ comment.user.name }}</strong>
+                        {% endif %}
                     {% else %}
                         <em>{{ comment.old_user_name }}</em>
                     {% endif %}
