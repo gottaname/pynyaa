@@ -14,11 +14,11 @@ def filelist(torrent_id):
     if torrent is None:
         return abort(404)
     files = []
-    for file in torrent.files:
+    for path, size in zip(torrent.file_paths, torrent.file_sizes):
         files.append(dict(
-            path=file.path,
-            size=file.size,
-            pretty_size=utils.pretty_size(file.size),
+            path=path,
+            size=size,
+            pretty_size=utils.pretty_size(size),
         ))
     return jsonify(
         id=torrent.id,

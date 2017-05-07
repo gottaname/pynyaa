@@ -1,5 +1,5 @@
 
-from urllib.parse import quote
+from urllib.parse import urlencode
 
 from .. import db
 
@@ -32,7 +32,9 @@ class Torrent(db.Model):
     t_created_by = db.Column(db.String(255))
     t_comment = db.Column(db.Text)
     t_announce = db.Column(db.Text)
-    files = db.relationship('File', backref='torrent')
+
+    file_paths = db.Column(db.ARRAY(db.String(1024)))
+    file_sizes = db.Column(db.ARRAY(db.BigInteger))
 
     @property
     def cat_url_param(self):
@@ -40,8 +42,13 @@ class Torrent(db.Model):
 
     @property
     def magnet(self):
-        return f'magnet:?xt=urn:btih:{self.hash.lower()}' \
-               f'&dn={quote(self.name)}'
+        magnet_query = dict(
+            xt=f'urn:btih:{self.hash.lower()}',
+            dn=self.name
+        )
+        if self.t_announce:
+            magnet_query['tr'] = self.t_announce
+        return f'magnet:?{urlencode(magnet_query)}'
 
 
 class Category(db.Model):
@@ -92,9 +99,3 @@ class Comment(db.Model):
             'old_user_name IS NOT NULL AND user_id IS NULL',
             'chk_user_old_name'),
     )
-
-
-class File(db.Model):
-    path = db.Column(db.String(1024), primary_key=True)
-    torrent_id = db.Column(db.Integer, db.ForeignKey('torrent.id'), primary_key=True)
-    size = db.Column(db.Integer)

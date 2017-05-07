@@ -140,6 +140,7 @@ def upload():
         info = torrent_data['info']
 
         torrent = models.Torrent()
+        torrent.is_sqlite_import = False
         torrent.name = info['name']
         torrent.hash = info_hash
 
@@ -160,21 +161,21 @@ def upload():
         torrent.t_creation_date = datetime.fromtimestamp(
             torrent_data['creation date'], pytz.utc)
 
-        torrent.is_exact = True
+        file_paths = []
+        file_sizes = []
         if 'files' in info:
             torrent.filesize = 0
             for file_data in info['files']:
                 torrent.filesize += file_data['length']
-                torrent.files.append(models.File(
-                    path='/'.join(file_data['path']),
-                    size=file_data['length']
-                ))
+                file_paths.append('/'.join(file_data['path']))
+                file_sizes.append(file_data['length'])
         else:
             torrent.filesize = info['length']
-            torrent.files.append(models.File(
-                path=torrent.name,
-                size=torrent.filesize
-            ))
+            file_paths.append(torrent.name)
+            file_sizes.append(torrent.filesize)
+
+        torrent.file_paths = file_paths
+        torrent.file_sizes = file_sizes
         db.session.add(torrent)
         db.session.commit()
         return redirect(url_for('.torrent_view', torrent_id=torrent.id))
