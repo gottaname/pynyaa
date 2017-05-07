@@ -31,7 +31,7 @@ class Torrent(db.Model):
     t_creation_date = db.Column(db.DateTime(True))
     t_created_by = db.Column(db.String(255))
     t_comment = db.Column(db.Text)
-    t_announce = db.Column(db.Text)
+    t_announce = db.Column(db.ARRAY(db.String(100)))
 
     file_paths = db.Column(db.ARRAY(db.String(1024)))
     file_sizes = db.Column(db.ARRAY(db.BigInteger))

@@ -71,7 +71,11 @@
         </tr>
         <tr>
             <th>Announce</th>
-            <td>{{ torrent.t_announce }}</td>
+            <td>
+                {% for tracker in torrent.t_announce %}
+                {{ tracker }}<br />
+                {% endfor %}
+            </td>
         </tr>
         </table>
     {% endif %}

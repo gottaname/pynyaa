@@ -155,8 +155,16 @@ def upload():
         torrent.stardom = 0
         torrent.date = datetime.now(pytz.utc)
 
-        torrent.t_announce = torrent_data['announce']
-        torrent.t_comment = torrent_data['comment']
+        announce = []
+        if 'announce' in torrent_data:
+            announce.append(torrent_data['announce'])
+
+        if 'announce-list' in torrent_data:
+            announce.extend([item for sub in torrent_data['announce-list'] for item in sub])
+
+        announce = sorted(set(announce))
+        torrent.t_announce = announce
+        torrent.t_comment = torrent_data.get('comment')
         torrent.t_created_by = torrent_data['created by']
         torrent.t_creation_date = datetime.fromtimestamp(
             torrent_data['creation date'], pytz.utc)
