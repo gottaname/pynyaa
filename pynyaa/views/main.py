@@ -104,9 +104,12 @@ def upload():
     """
     upload_form = forms.UploadTorrentForm()
 
+    categories = models.Category.query\
+        .options(db.joinedload(models.Category.sub_categories))\
+        .order_by(models.Category.name).all()
+
     cats = {}
-    for cat in models.Category.query.order_by(models.Category.name):
-        cats[f'{cat.id}_'] = cat.name
+    for cat in categories:
         for subcat in cat.sub_categories:
             cats[f'{cat.id}_{subcat.id}'] = f'{cat.name} - {subcat.name}'
     upload_form.category.choices = cats.items()
@@ -146,8 +149,7 @@ def upload():
 
         cat, subcat = category.split('_', 1)
         torrent.category_id = cat
-        if subcat:
-            torrent.sub_category_id = subcat
+        torrent.sub_category_id = subcat
 
         torrent.description = upload_form.data.get('description')
         torrent.website_link = upload_form.data.get('website')
@@ -188,4 +190,4 @@ def upload():
         db.session.commit()
         return redirect(url_for('.torrent_view', torrent_id=torrent.id))
 
-    return render_template('upload.html', form=upload_form)
+    return render_template('upload.html', categories=categories, form=upload_form)

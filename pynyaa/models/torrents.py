@@ -11,10 +11,10 @@ class Torrent(db.Model):
 
     is_sqlite_import = db.Column(db.Boolean, default=False)
 
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     category = db.relationship('Category', backref='torrents')
 
-    sub_category_id = db.Column(db.Integer, db.ForeignKey('sub_category.id'))
+    sub_category_id = db.Column(db.Integer, db.ForeignKey('sub_category.id'), nullable=False)
     sub_category = db.relationship('SubCategory', backref='torrents')
 
     status_id = db.Column(db.Integer, db.ForeignKey('status.id'))
