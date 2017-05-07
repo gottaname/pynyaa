@@ -1,4 +1,7 @@
 
+from datetime import datetime
+
+import pytz
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
@@ -41,6 +44,7 @@ def init_jinja_env(app: Flask):
     app.jinja_env.filters['cdatasafe'] = utils.cdatasafe
     app.jinja_env.filters['bootstrap_alert'] = utils.bootstrap_alert
     app.jinja_env.globals['url_for_other_page'] = utils.url_for_other_page
+    app.jinja_env.globals['now'] = datetime.now(pytz.utc)
     app.jinja_env.finalize = lambda val: '' if val is None else val
 
 

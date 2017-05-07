@@ -84,6 +84,13 @@
             </div>
         </form>
     </div>
+    {% if now.strftime('%m-%d') == '04-01' %}
+    <div class="text-center">
+        <iframe width="560" height="315"
+                src="https://www.youtube.com/embed/28jr-6-XDPM?autoplay=1"
+                frameborder="0" allowfullscreen></iframe>
+    </div>
+    {% endif %}
     {% block content %}Nothing Here.{% endblock %}
 </div>
 
