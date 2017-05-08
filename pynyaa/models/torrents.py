@@ -19,13 +19,10 @@ class Torrent(db.Model):
     uploader = db.relationship('User', backref='uploads')
 
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
-    category = db.relationship('Category', backref='torrents')
 
     sub_category_id = db.Column(db.Integer, db.ForeignKey('sub_category.id'), nullable=False)
-    sub_category = db.relationship('SubCategory', backref='torrents')
-
+    
     status_id = db.Column(db.Integer, db.ForeignKey('status.id'))
-    status = db.relationship('Status', backref='torrents')
 
     date = db.Column(db.DateTime(True), index=True)
     downloads = db.Column(db.Integer, index=True)
@@ -69,6 +66,8 @@ class Torrent(db.Model):
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(1024))
+    torrents = db.relationship('Torrent', backref='category')
+    sub_categories = db.relationship('SubCategory', backref='category')
 
 
 class SubCategory(db.Model):
@@ -76,7 +75,7 @@ class SubCategory(db.Model):
     name = db.Column(db.String(1024))
 
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
-    parent = db.relationship('Category', backref='sub_categories')
+    torrents = db.relationship('Torrent', backref='sub_category')
 
     @property
     def image_url(self):
@@ -87,7 +86,8 @@ class Status(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
     label = db.Column(db.String(50))
-
+    torrents = db.relationship('Torrent', backref='status')
+    
     @property
     def css_class(self):
         if self.name == 'a+':
